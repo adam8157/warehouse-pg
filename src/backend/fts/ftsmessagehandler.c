@@ -18,6 +18,7 @@
 #include <replication/slot.h>
 
 #include "access/xlog.h"
+#include "catalog/catalog.h"
 #include "cdb/cdbvars.h"
 #include "libpq/pqformat.h"
 #include "libpq/libpq.h"
@@ -398,7 +399,7 @@ HandleFtsWalRepPromote(void)
 		 */
 		UnsetSyncStandbysDefined();
 
-		CreateReplicationSlotOnPromote(INTERNAL_WAL_REPLICATION_SLOT_NAME);
+		CreateReplicationSlotOnPromote(GP_INTERNAL_WAL_REPLICATION_SLOT_NAME);
 
 		SignalPromote();
 	}

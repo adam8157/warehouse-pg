@@ -27,6 +27,8 @@
  */
 #define GP_INTERNAL_AUTO_CONF_FILE_NAME "internal.auto.conf"
 
+#define GP_INTERNAL_WAL_REPLICATION_SLOT_NAME "internal_wal_replication_slot"
+
 extern bool IsSystemRelation(Relation relation);
 extern bool IsToastRelation(Relation relation);
 extern bool IsCatalogRelation(Relation relation);

@@ -95,6 +95,10 @@ static const char *excludeDirContents[] =
 	/* GPDB: Default gpbackup directory (backup contents) */
 	"backups",
 
+	/* GPDB: Error log directories for external table's SREH (contents) */
+	"errlog",
+	"errlogpersistent",
+
 	/* end of list */
 	NULL
 };
@@ -128,8 +132,14 @@ static const struct exclude_list_item excludeFiles[] =
 
 	{GP_INTERNAL_AUTO_CONF_FILE_NAME, false},
 
+	{GP_INTERNAL_WAL_REPLICATION_SLOT_NAME, false},
+
 	/* GPDB: Default gpbackup directory (top-level directory) */
 	{"backups", false},
+
+	/* GPDB: Error log directories for external table's SREH (top-level directory) */
+	{"errlog", false},
+	{"errlogpersistent", false},
 
 	/* end of list */
 	{NULL, false}
@@ -287,10 +297,18 @@ process_target_file(const char *path, file_type_t type, size_t size,
 
 		if (strcmp(filename, GP_INTERNAL_AUTO_CONF_FILE_NAME) == 0)
 			return;
+		if (strcmp(filename, GP_INTERNAL_WAL_REPLICATION_SLOT_NAME) == 0)
+			return;
 		if (strstr(path, "log/") == path)
 			return;
 		if (strstr(path, "backups/") == path ||
 			strcmp(path, "backups") == 0)
+			return;
+		if (strstr(path, "errlog/") == path ||
+			strcmp(path, "errlog") == 0)
+			return;
+		if (strstr(path, "errlogpersistent/") == path ||
+			strcmp(path, "errlogpersistent") == 0)
 			return;
 
 		if (log_directory != NULL)

@@ -170,7 +170,7 @@ test_HandleFtsWalRepPromoteMirror(void **state)
 	expect_value(LWLockRelease, lock, ReplicationSlotControlLock);
 	will_be_called(LWLockRelease);
 
-	expect_value(ReplicationSlotCreate, name, INTERNAL_WAL_REPLICATION_SLOT_NAME);
+	expect_value(ReplicationSlotCreate, name, GP_INTERNAL_WAL_REPLICATION_SLOT_NAME);
 	expect_value(ReplicationSlotCreate, db_specific, false);
 	expect_value(ReplicationSlotCreate, persistency, RS_PERSISTENT);
 	will_be_called_with_sideeffect(ReplicationSlotCreate,

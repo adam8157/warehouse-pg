@@ -213,6 +213,10 @@ static const char *excludeDirContents[] =
 	/* GPDB: Default gpbackup directory (backup contents) */
 	"backups",
 
+	/* GPDB: Error log directories for external table's SREH (content) */
+	"errlog",
+	"errlogpersistent",
+
 	/* end of list */
 	NULL
 };
@@ -248,6 +252,10 @@ static const struct exclude_list_item excludeFiles[] =
 
 	/* GPDB: Default gpbackup directory (top-level directory) */
 	{"backups", false},
+
+	/* GPDB: Error log directories for external table's SREH (top-level directory) */
+	{"errlog", false},
+	{"errlogpersistent", false},
 
 	/* end of list */
 	{NULL, false}
