@@ -297,8 +297,6 @@ process_target_file(const char *path, file_type_t type, size_t size,
 
 		if (strcmp(filename, GP_INTERNAL_AUTO_CONF_FILE_NAME) == 0)
 			return;
-		if (strcmp(filename, GP_INTERNAL_WAL_REPLICATION_SLOT_NAME) == 0)
-			return;
 		if (strstr(path, "log/") == path)
 			return;
 		if (strstr(path, "backups/") == path ||
