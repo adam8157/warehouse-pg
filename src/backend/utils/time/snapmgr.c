@@ -508,7 +508,23 @@ GetCatalogSnapshot(Oid relid)
 	if (HistoricSnapshotActive())
 		return HistoricSnapshot;
 
-	return GetNonHistoricCatalogSnapshot(relid, DTX_CONTEXT_LOCAL_ONLY);
+	/*
+	 * Catalog snapshots never need a distributed snapshot.  Pass the real
+	 * DTX context only for QE readers / entry-db singletons so they go
+	 * through readerFillLocalSnapshot() in GetSnapshotData() to copy the
+	 * writer's snapshot (including curcid for MVCC visibility of in-
+	 * transaction catalog changes).  All other roles use LOCAL_ONLY to
+	 * avoid unnecessary CreateDistributedSnapshot() overhead on QD.
+	 */
+	{
+		DtxContext ctx;
+
+		ctx = (DistributedTransactionContext == DTX_CONTEXT_QE_READER ||
+			   DistributedTransactionContext == DTX_CONTEXT_QE_ENTRY_DB_SINGLETON)
+			? DistributedTransactionContext : DTX_CONTEXT_LOCAL_ONLY;
+
+		return GetNonHistoricCatalogSnapshot(relid, ctx);
+	}
 }
 
 /*

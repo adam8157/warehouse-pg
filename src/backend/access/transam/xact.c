@@ -2313,6 +2313,23 @@ SetSharedTransactionId_reader(FullTransactionId xid, CommandId cid, DtxContext d
 					  U64FromFullTransactionId(TopTransactionStateData.fullTransactionId), currentCommandId,
 					  QEDtxContextInfo.distributedXid,
 					  QEDtxContextInfo.segmateSync)));
+
+#ifdef FAULT_INJECTOR
+	/*
+	 * For testing: after readerFillLocalSnapshot has set the correct curcid,
+	 * reset it back to 0 and invalidate all caches.  This simulates the bug
+	 * condition where a reader gang has curcid=0 and an empty relcache at
+	 * the time of catalog access.  Any subsequent catalog lookup (e.g.
+	 * RelationBuildDesc → ScanPgRelation → GetCatalogSnapshot) will need to
+	 * re-read pg_class.  Without the fixes, the MVCC check "cmin < curcid"
+	 * evaluates as "cmin(N) < 0" = false → "could not open relation".
+	 */
+	if (SIMPLE_FAULT_INJECTOR("reader_set_xid_clear_curcid") == FaultInjectorTypeSkip)
+	{
+		currentCommandId = 0;
+		InvalidateSystemCaches();
+	}
+#endif
 }
 
 /*
@@ -2564,6 +2581,16 @@ StartTransaction(void)
 			 */
 			Assert (SharedLocalSnapshotSlot != NULL);
 			MyTmGxact->gxid = QEDtxContextInfo.distributedXid;
+
+			/*
+			 * Set the command ID from QD-dispatched context immediately so
+			 * that any early catalog access (e.g. relcache build before
+			 * readerFillLocalSnapshot) sees the correct visibility.  Without
+			 * this, currentCommandId stays at 0 and MVCC's cmin < curcid
+			 * check fails for catalog tuples written by the writer gang
+			 * earlier in this transaction.
+			 */
+			currentCommandId = QEDtxContextInfo.curcid;
 
 			/*
 			 * Snapshot must not be created before setting transaction
