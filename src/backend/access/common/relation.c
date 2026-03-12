@@ -22,11 +22,17 @@
 
 #include "access/relation.h"
 #include "access/xact.h"
+#include "access/heapam.h"
+#include "access/htup_details.h"
+#include "access/table.h"
 #include "catalog/namespace.h"
+#include "catalog/pg_class.h"
+#include "cdb/cdbvars.h"
 #include "miscadmin.h"
 #include "pgstat.h"
 #include "storage/lmgr.h"
 #include "utils/inval.h"
+#include "utils/snapmgr.h"
 #include "utils/syscache.h"
 
 
@@ -59,10 +65,74 @@ relation_open(Oid relationId, LOCKMODE lockmode)
 	r = RelationIdGetRelation(relationId);
 
 	if (!RelationIsValid(r))
+	{
+		/*
+		 * Diagnostic: before dying, check if the pg_class tuple exists but
+		 * is not visible under the current snapshot.  This helps debug
+		 * flaky "could not open relation" errors on QE reader gangs.
+		 */
+		if (IsTransactionState())
+		{
+			Relation	pg_class_rel;
+			TableScanDesc scan;
+			HeapTuple	tup;
+			bool		found_any = false;
+
+			pg_class_rel = table_open(RelationRelationId, AccessShareLock);
+			scan = table_beginscan(pg_class_rel, SnapshotAny, 0, NULL);
+			while ((tup = heap_getnext(scan, ForwardScanDirection)) != NULL)
+			{
+				Form_pg_class classForm = (Form_pg_class) GETSTRUCT(tup);
+				if (classForm->oid == relationId)
+				{
+					HeapTupleHeader hdr = tup->t_data;
+					elog(PANIC,
+						 "could not open relation with OID %u: "
+						 "pg_class tuple EXISTS (relname=%s) but invisible. "
+						 "tuple xmin=%u cmin=%u xmax=%u infomask=0x%04x, "
+						 "my curcid=%u, my xid=%u, "
+						 "DTX context=%d (%s), Gp_role=%d, "
+						 "segindex=%d",
+						 relationId,
+						 NameStr(classForm->relname),
+						 HeapTupleHeaderGetRawXmin(hdr),
+						 HeapTupleHeaderGetRawCommandId(hdr),
+						 HeapTupleHeaderGetRawXmax(hdr),
+						 hdr->t_infomask,
+						 GetCurrentCommandId(false),
+						 GetCurrentTransactionIdIfAny(),
+						 DistributedTransactionContext,
+						 DtxContextToString(DistributedTransactionContext),
+						 Gp_role,
+						 GpIdentity.segindex);
+					found_any = true;
+					break;
+				}
+			}
+			table_endscan(scan);
+			table_close(pg_class_rel, AccessShareLock);
+
+			if (!found_any)
+				elog(PANIC,
+					 "could not open relation with OID %u: "
+					 "pg_class tuple NOT FOUND even with SnapshotAny. "
+					 "my curcid=%u, my xid=%u, "
+					 "DTX context=%d (%s), Gp_role=%d, "
+					 "segindex=%d",
+					 relationId,
+					 GetCurrentCommandId(false),
+					 GetCurrentTransactionIdIfAny(),
+					 DistributedTransactionContext,
+					 DtxContextToString(DistributedTransactionContext),
+					 Gp_role,
+					 GpIdentity.segindex);
+		}
+
 		ereport(ERROR,
 				(errcode(ERRCODE_UNDEFINED_TABLE),
 				 errmsg("could not open relation with OID %u", relationId),
 				 errdetail("This can be validly caused by a concurrent delete operation on this object.")));
+	}
 
 	/*
 	 * If we didn't get the lock ourselves, assert that caller holds one,
