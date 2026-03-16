@@ -45,6 +45,7 @@
 		"gp_blockdirectory_minipage_size",
 		"gp_cpu_decompress_cost",
 		"gp_debug_linger",
+		"gp_debug_relation_open",
 		"gp_default_storage_options",
 		"gp_detect_data_correctness",
 		"gp_disable_tuple_hints",

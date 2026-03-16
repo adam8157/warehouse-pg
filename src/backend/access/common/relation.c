@@ -70,8 +70,11 @@ relation_open(Oid relationId, LOCKMODE lockmode)
 		 * Diagnostic: before dying, check if the pg_class tuple exists but
 		 * is not visible under the current snapshot.  This helps debug
 		 * flaky "could not open relation" errors on QE reader gangs.
+		 *
+		 * Gated behind gp_debug_relation_open to avoid PANIC in normal
+		 * concurrent-drop scenarios.
 		 */
-		if (IsTransactionState())
+		if (gp_debug_relation_open && IsTransactionState())
 		{
 			Relation	pg_class_rel;
 			TableScanDesc scan;

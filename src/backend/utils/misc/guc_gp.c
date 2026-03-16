@@ -925,6 +925,17 @@ struct config_bool ConfigureNamesBool_gp[] =
 	},
 
 	{
+		{"gp_debug_relation_open", PGC_USERSET, DEVELOPER_OPTIONS,
+			gettext_noop("Dump pg_class diagnostics when relation_open fails."),
+			NULL,
+			GUC_NO_SHOW_ALL | GUC_NOT_IN_SAMPLE
+		},
+		&gp_debug_relation_open,
+		false,
+		NULL, NULL, NULL
+	},
+
+	{
 		{"gp_appendonly_verify_block_checksums", PGC_USERSET, DEVELOPER_OPTIONS,
 			gettext_noop("Verify the append-only block checksum when reading."),
 			NULL,

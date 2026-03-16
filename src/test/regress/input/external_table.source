@@ -886,6 +886,7 @@ SELECT gp_truncate_error_log('exttab_txs_1');
 SELECT gp_truncate_error_log('exttab_txs_2');
 DROP EXTERNAL TABLE IF EXISTS exttab_txs_3;
 DROP EXTERNAL TABLE IF EXISTS exttab_txs_4;
+SET gp_debug_relation_open = on;
 BEGIN;
 -- create an external table that will reach segment reject limit
 -- reaches reject limit
@@ -914,6 +915,7 @@ SELECT count(*) FROM gp_read_error_log('exttab_txs_4');
 -- external tables created within aborted transactions should not exist
 SELECT count(*) FROM exttab_txs_3;
 SELECT count(*) FROM exttab_txs_4;
+RESET gp_debug_relation_open;
 
 -- UDFS with segment reject limit reached
 -- does not reach reject limit

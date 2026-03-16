@@ -149,6 +149,7 @@ extern bool           gp_enable_slow_writer_testmode;
  * PGPROC.
  */
 extern bool gp_debug_pgproc;
+extern bool gp_debug_relation_open;
 
 /* Parameter debug_print_prelim_plan
  *

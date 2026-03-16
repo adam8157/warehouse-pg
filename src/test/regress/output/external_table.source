@@ -1640,6 +1640,7 @@ DROP EXTERNAL TABLE IF EXISTS exttab_txs_3;
 NOTICE:  foreign table "exttab_txs_3" does not exist, skipping
 DROP EXTERNAL TABLE IF EXISTS exttab_txs_4;
 NOTICE:  foreign table "exttab_txs_4" does not exist, skipping
+SET gp_debug_relation_open = on;
 BEGIN;
 -- create an external table that will reach segment reject limit
 -- reaches reject limit
@@ -1700,6 +1701,7 @@ SELECT count(*) FROM exttab_txs_4;
 ERROR:  relation "exttab_txs_4" does not exist
 LINE 1: SELECT count(*) FROM exttab_txs_4;
                              ^
+RESET gp_debug_relation_open;
 -- UDFS with segment reject limit reached
 -- does not reach reject limit
 CREATE EXTERNAL TABLE exttab_udfs_1( i int, j text )
